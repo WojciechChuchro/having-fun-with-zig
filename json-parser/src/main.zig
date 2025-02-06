@@ -20,35 +20,35 @@ pub fn buildTree(c: u8) !void {
     }
 }
 
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
+pub fn openFile(allocator: std.mem.Allocator) ![]u8 {
+    // Open the file
     const file = try fs.cwd().openFile("./test.json", .{});
     defer file.close();
 
-    var buf_reader = std.io.bufferedReader(file.reader());
-    const reader = buf_reader.reader();
+    // Get the file size
+    const file_size = try file.getEndPos();
 
-    var line = std.ArrayList(u8).init(allocator);
-    defer line.deinit();
+    // Create a buffer to hold the entire file content
+    var buffer = try allocator.alloc(u8, file_size);
 
-    const writer = line.writer();
-    var line_no: usize = 0;
-    while (reader.streamUntilDelimiter(writer, '\n', null)) {
-        defer line.clearRetainingCapacity();
-        line_no += 1;
-        for (line.items) |char| {
-            try buildTree(char);
-        }
-    } else |err| switch (err) {
-        error.EndOfStream => {
-            print("End of stream {any}", .{err});
+    // Read the entire file into the buffer
+    const bytes_read = try file.readAll(buffer);
 
-        },
-        else => return err,
+    // If we didn't read the whole file, resize the buffer
+    if (bytes_read < file_size) {
+        buffer = try allocator.realloc(buffer, bytes_read);
     }
 
-    print("Total lines: {d}\n", .{line_no});
+    return buffer;
+}
+
+pub fn main() !void {
+    // In your main function or wherever you're using it:
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+
+    const file_contents = try openFile(allocator);
+    defer allocator.free(file_contents); // Don't forget to free the memory
+    print("Data: {s}", .{file_contents});
+
 }
