@@ -6,15 +6,6 @@ const NodeErrors = error{InvalidStructure};
 
 const Node = struct { node: Node, nodeError: NodeErrors };
 
-pub fn buildTree(c: u8) !void {
-    print("char: {c}", .{c});
-    print("\n", .{});
-    if (c == '{') {
-        print("otiwerajacy nawiaz {c}", .{c});
-        print("\n", .{});
-    }
-}
-
 pub fn openFile(allocator: std.mem.Allocator) ![]u8 {
     const file = try fs.cwd().openFile("./test.json", .{});
     defer file.close();
@@ -38,5 +29,6 @@ pub fn main() !void {
 
     const file_contents = try openFile(allocator);
     defer allocator.free(file_contents);
+    print("Type: {s}\n", .{@typeName(@TypeOf(file_contents))});
     print("Data: {s}", .{file_contents});
 }
